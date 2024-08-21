@@ -78,9 +78,11 @@ The configuration file must look like this:
         prefix: "backup/prefix"
 
 You can choose to only use one of the configuration sets in the configfile using the --config parameter:
+
     python data2mqtt.py --configfile config.yaml --config "default"
 
 Or specify a comma-separated list if you want to use more than one configuration set:
+
     python data2mqtt.py --configfile config.yaml --config "default,backup"
 
 (It is also possible to process all configuration sets in the specified configfile by using --config=all)
