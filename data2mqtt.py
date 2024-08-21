@@ -143,6 +143,18 @@ def get_config_by_name(configurations, name):
 def merge_configs(base_config, override_config):
     return {**base_config, **{k: v for k, v in override_config.items() if v is not None}}
 
+def parse_mqtt_host_and_port(mqtt_host):
+    """Parses the MQTT host and port if specified as part of the host string."""
+    if ':' in mqtt_host:
+        host, port = mqtt_host.rsplit(':', 1)
+        try:
+            return host, int(port)
+        except ValueError:
+            print(f"Error: Invalid port number '{port}' in MQTT host.")
+            sys.exit(1)
+    else:
+        return mqtt_host, 1883  # Default MQTT port
+
 def process_config(client, config, interval):
     # Certificate verification configuration
     verify = config.get('verify', 'true')
@@ -159,10 +171,13 @@ def process_config(client, config, interval):
     if config.get('username') and config.get('password'):
         auth = (config['username'], config['password'])
 
+    # Parse MQTT host and port
+    mqtt_host, mqtt_port = parse_mqtt_host_and_port(config['mqtt_ip'])
+
     # Connect to the MQTT server
     client.username_pw_set(config.get('mqttuser', ''), config.get('mqttpassword', ''))
     try:
-        client.connect(config['mqtt_ip'], config['mqtt_port'], 60)
+        client.connect(mqtt_host, mqtt_port, 60)
     except Exception as e:
         print(f"Error connecting to the MQTT server: {e}")
         sys.exit(1)
@@ -183,8 +198,8 @@ def main():
     parser.add_argument("--configfile", type=str, help="Path to YAML configuration file.")
     parser.add_argument("--config", type=str, help="Name of the configuration set to use, or 'all' to process all configurations. Can also be a comma-separated list of configuration names.")
     parser.add_argument("url", type=str, nargs='?', help="The URL or file path from which to fetch data (supports HTTP/HTTPS and file://).")
-    parser.add_argument("mqtt_ip", type=str, nargs='?', help="The IP address of the MQTT server.")
-    parser.add_argument("mqtt_port", type=int, nargs='?', help="The port of the MQTT server.")
+    parser.add_argument("mqtt_ip", type=str, nargs='?', help="The IP address or hostname of the MQTT server, optionally with port (e.g., '192.168.1.100:1884').")
+    parser.add_argument("mqtt_port", type=int, nargs='?', help="The port of the MQTT server (if not specified as part of the MQTT host).")
     parser.add_argument("--prefix", type=str, help="Optional prefix for all MQTT topics.")
     parser.add_argument("--username", type=str, help="Username for URL authentication (optional).")
     parser.add_argument("--password", type=str, help="Password for URL authentication (optional).")
