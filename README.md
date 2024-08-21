@@ -1,6 +1,14 @@
 # data2mqtt
 A Python script that can read data in various formats from an URL and publish the data to an MQTT broker
 
+## Features
+
+The script allows to specify an URL (optional: username / password) from where it fetches data. Once the data has been successfully received, data2mqtt tries to detect the format of it. In addition to JSON, the program also supports XML, CSV and YAML. As soon as the format has been identified, the data is parsed and each found data point is published to a specified MQTT broker, which can be defined by IP address/hostname and port. Optionally, credentials for the broker can be provided if it is required. 
+
+The URL processing is handled by the requests library, with one exception: if it starts with file:// , data2mqtt reads the specified file directly. 
+
+## Usage
+
     usage: data2mqtt.py [-h] [--configfile CONFIGFILE] [--config CONFIG] [--prefix PREFIX] [--username USERNAME]
                         [--password PASSWORD] [--mqttuser MQTTUSER] [--mqttpassword MQTTPASSWORD] [--verify VERIFY]
                         [--interval INTERVAL]
@@ -29,6 +37,8 @@ A Python script that can read data in various formats from an URL and publish th
                             (default: None)
       --interval INTERVAL   Interval in seconds to repeatedly fetch data from the URL (optional). (default: None)
 
+
+## Configuration File Format and Use
 
 The configuration file must look like this:
 
