@@ -9,6 +9,7 @@ from io import StringIO
 import os
 import sys
 import time
+from urllib.parse import urlparse
 
 def publish_to_mqtt(client, topic, value, prefix=""):
     full_topic = f"{prefix}.{topic}" if prefix else topic
@@ -79,14 +80,46 @@ def detect_and_process_data(client, data, content_type, prefix=""):
                         print("Unable to determine or process data format.")
 
 def fetch_and_publish_data(client, url, auth, verify, prefix):
-    try:
-        response = requests.get(url, auth=auth, verify=verify)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        content_type = response.headers.get('Content-Type', '').lower()
-        data = response.text
-        detect_and_process_data(client, data, content_type, prefix)
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching data from the URL: {e}")
+    parsed_url = urlparse(url)
+
+    if parsed_url.scheme == 'file':
+        # Handle local file
+        file_path = parsed_url.path
+        if not os.path.exists(file_path):
+            print(f"Error: Local file {file_path} not found.")
+            return
+
+        try:
+            with open(file_path, 'r') as file:
+                data = file.read()
+                content_type = guess_content_type(file_path)
+                detect_and_process_data(client, data, content_type, prefix)
+        except Exception as e:
+            print(f"Error reading local file {file_path}: {e}")
+    else:
+        # Handle HTTP/HTTPS
+        try:
+            response = requests.get(url, auth=auth, verify=verify)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            content_type = response.headers.get('Content-Type', '').lower()
+            data = response.text
+            detect_and_process_data(client, data, content_type, prefix)
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching data from the URL: {e}")
+
+def guess_content_type(file_path):
+    """Guess the content type based on file extension."""
+    _, ext = os.path.splitext(file_path)
+    if ext in ['.json']:
+        return 'application/json'
+    elif ext in ['.xml']:
+        return 'application/xml'
+    elif ext in ['.yaml', '.yml']:
+        return 'application/x-yaml'
+    elif ext in ['.csv']:
+        return 'text/csv'
+    else:
+        return 'text/plain'
 
 def load_config_file(config_file):
     try:
@@ -144,12 +177,12 @@ def process_config(client, config, interval):
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description="Fetch data from a URL and publish it via MQTT.",
+        description="Fetch data from a URL or a local file and publish it via MQTT.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("--configfile", type=str, help="Path to YAML configuration file.")
     parser.add_argument("--config", type=str, help="Name of the configuration set to use, or 'all' to process all configurations. Can also be a comma-separated list of configuration names.")
-    parser.add_argument("url", type=str, nargs='?', help="The URL from which to fetch data (supports HTTP/HTTPS).")
+    parser.add_argument("url", type=str, nargs='?', help="The URL or file path from which to fetch data (supports HTTP/HTTPS and file://).")
     parser.add_argument("mqtt_ip", type=str, nargs='?', help="The IP address of the MQTT server.")
     parser.add_argument("mqtt_port", type=int, nargs='?', help="The port of the MQTT server.")
     parser.add_argument("--prefix", type=str, help="Optional prefix for all MQTT topics.")
@@ -158,7 +191,7 @@ def main():
     parser.add_argument("--mqttuser", type=str, help="Username for MQTT authentication (optional).")
     parser.add_argument("--mqttpassword", type=str, help="Password for MQTT authentication (optional).")
     parser.add_argument("--verify", type=str, help="SSL certificate verification for HTTPS requests ('false' to disable, or path to a custom CA bundle).")
-    parser.add_argument("--interval", type=int, help="Interval in seconds to repeatedly fetch data from the URL (optional).")
+    parser.add_argument("--interval", type=int, help="Interval in seconds to repeatedly fetch data from the URL or file (optional).")
 
     args = parser.parse_args()
 
