@@ -7,6 +7,20 @@ The script allows to specify an URL (optional: username / password) from where i
 
 The URL processing is handled by the requests library, with one exception: if it starts with file:// , data2mqtt reads the specified file directly. 
 
+## Installation / Dependencies
+
+The following Python libraries are required and might need to be installed (e.g. using pip):
+    requests:        handling HTTP and HTTPS URLs
+    json:            for JSON parsing
+    yaml:            for YAML parsing
+    csv:             for CSV parsing
+    xmltodict:       for XML parsing
+    paho:            for implementing a MQTT client
+    argparse:        to parse commandline arguments
+    io:              for CSV handling 
+
+Once all libraries are available, the script can be directly started using python. A usage message (see below) is available with --help and the script can either be called directly, using a crontab entry or, optionally, offers to pull data from the specified URL(s) in a defined interval until it is interrupted.
+
 ## Usage
 
     usage: data2mqtt.py [-h] [--configfile CONFIGFILE] [--config CONFIG] [--prefix PREFIX] [--username USERNAME]
