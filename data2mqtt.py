@@ -167,17 +167,15 @@ def main():
     if args.configfile:
         configurations = load_config_file(args.configfile)
 
-        if args.config:
-            if args.config.lower() == "all":
-                config_sets = configurations
-            else:
-                config_names = [name.strip() for name in args.config.split(",")]
-                config_sets = [get_config_by_name(configurations, name) for name in config_names]
-        elif len(configurations) == 1:
+        # Default to --config="all" if --config is not specified
+        if not args.config:
+            args.config = "all"
+
+        if args.config.lower() == "all":
             config_sets = configurations
         else:
-            print("Error: Multiple configurations found in the configuration file. Please specify a configuration with --config.")
-            sys.exit(1)
+            config_names = [name.strip() for name in args.config.split(",")]
+            config_sets = [get_config_by_name(configurations, name) for name in config_names]
     else:
         # If no configfile is provided, create a single configuration from command-line arguments
         config_sets = [vars(args)]
