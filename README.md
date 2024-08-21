@@ -10,6 +10,7 @@ The URL processing is handled by the requests library, with one exception: if it
 ## Installation / Dependencies
 
 The following Python libraries are required and might need to be installed (e.g. using pip):
+
     requests:        handling HTTP and HTTPS URLs
     json:            for JSON parsing
     yaml:            for YAML parsing
