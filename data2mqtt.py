@@ -172,7 +172,7 @@ def process_config(client, config, interval):
         auth = (config['username'], config['password'])
 
     # Parse MQTT host and port
-    mqtt_host, mqtt_port = parse_mqtt_host_and_port(config['mqtt_ip'])
+    mqtt_host, mqtt_port = parse_mqtt_host_and_port(config.get('mqtt_ip', '127.0.0.1'))
 
     # Connect to the MQTT server
     client.username_pw_set(config.get('mqttuser', ''), config.get('mqttpassword', ''))
@@ -198,7 +198,7 @@ def main():
     parser.add_argument("--configfile", type=str, help="Path to YAML configuration file.")
     parser.add_argument("--config", type=str, help="Name of the configuration set to use, or 'all' to process all configurations. Can also be a comma-separated list of configuration names.")
     parser.add_argument("url", type=str, nargs='?', help="The URL or file path from which to fetch data (supports HTTP/HTTPS and file://).")
-    parser.add_argument("mqtt_ip", type=str, nargs='?', help="The IP address or hostname of the MQTT server, optionally with port (e.g., '192.168.1.100:1884').")
+    parser.add_argument("mqtt_ip", type=str, nargs='?', help="The IP address or hostname of the MQTT server, optionally with port (e.g., '192.168.1.100:1884').", default="127.0.0.1")
     parser.add_argument("mqtt_port", type=int, nargs='?', help="The port of the MQTT server (if not specified as part of the MQTT host).")
     parser.add_argument("--prefix", type=str, help="Optional prefix for all MQTT topics.")
     parser.add_argument("--username", type=str, help="Username for URL authentication (optional).")
