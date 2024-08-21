@@ -34,23 +34,25 @@ Once all libraries are available, the script can be directly started using pytho
     positional arguments:
       url                   The URL from which to fetch data (supports HTTP/HTTPS). 
       mqtt_ip               The IP address of the MQTT server (default: localhost)
-      mqtt_port             The port of the MQTT server (default: 1883). You can also specify the port by adding it to the mqtt_ip 
+      mqtt_port             The port of the MQTT server (default: 1883). You can also 
+                            specify the port by adding it to the mqtt_ip 
                             parameter, separated by a colon (e.g. 192.168.0.1:1883).
     
     options:
       -h, --help            show this help message and exit
       --configfile CONFIGFILE
                             Path to YAML configuration file. (default: None)
-      --config CONFIG       Name of the configuration set to use, or 'all' to process all configurations. Can also be a comma-
-                            separated list of configuration names. (default: all)
+      --config CONFIG       Name of the configuration set to use, or 'all' to process 
+                            all configurations. Can also be a comma-separated list of 
+                            configuration names. (default: all)
       --prefix PREFIX       Optional prefix for all MQTT topics. (default: None)
       --username USERNAME   Username for URL authentication (optional). (default: None)
       --password PASSWORD   Password for URL authentication (optional). (default: None)
       --mqttuser MQTTUSER   Username for MQTT authentication (optional). (default: None)
       --mqttpassword MQTTPASSWORD
-                            Password for MQTT authentication (optional). (default: None)
-      --verify VERIFY       SSL certificate verification for HTTPS requests ('false' to disable, or path to a custom CA bundle).
-                            (default: None)
+                            Password for MQTT authentication (optional)
+      --verify VERIFY       SSL certificate verification for HTTPS requests ('false' to disable,
+                            or path to a custom CA bundle) 
       --interval INTERVAL   Interval in seconds to repeatedly fetch data from the URL (optional). (default: None)
 
 
