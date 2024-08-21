@@ -31,9 +31,10 @@ Once all libraries are available, the script can be directly started using pytho
     Fetch data from a URL and publish it via MQTT.
     
     positional arguments:
-      url                   The URL from which to fetch data (supports HTTP/HTTPS). (default: None)
-      mqtt_ip               The IP address of the MQTT server. (default: None)
-      mqtt_port             The port of the MQTT server. (default: None)
+      url                   The URL from which to fetch data (supports HTTP/HTTPS). 
+      mqtt_ip               The IP address of the MQTT server (default: localhost)
+      mqtt_port             The port of the MQTT server (default: 1883). You can also specify the port by adding it to the mqtt_ip 
+                            parameter, separated by a colon (e.g. 192.168.0.1:1883).
     
     options:
       -h, --help            show this help message and exit
