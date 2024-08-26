@@ -5,14 +5,26 @@ import csv
 import xmltodict
 import paho.mqtt.client as mqtt
 import argparse
+import time
 from io import StringIO
 import os
 import sys
-import time
 from urllib.parse import urlparse
+from datetime import datetime
+
+# Loglevel lesen (Default: 0)
+LOGLEVEL = int(os.getenv("LOGLEVEL", "0"))
+
+def log(message, level):
+    """Log messages with a timestamp and log level based on the current log level."""
+    if LOGLEVEL >= level:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(f"{timestamp} [{level}] {message}")
 
 def publish_to_mqtt(client, topic, value, prefix=""):
     full_topic = f"{prefix}.{topic}" if prefix else topic
+    if LOGLEVEL >= 4:
+        log(f"Publishing to MQTT: Topic: {full_topic}, Value: {value}", 4)
     client.publish(full_topic, value)
 
 def process_json(client, json_obj, parent_key="", prefix=""):
@@ -24,21 +36,21 @@ def process_json(client, json_obj, parent_key="", prefix=""):
             else:
                 publish_to_mqtt(client, full_key, str(value), prefix)
     else:
-        print("The JSON object is not structured as expected.")
+        log("The JSON object is not structured as expected.", 1)
 
 def process_xml(client, xml_data, prefix=""):
     try:
         json_data = xmltodict.parse(xml_data)
         process_json(client, json_data, prefix=prefix)
     except Exception as e:
-        print(f"Error processing XML data: {e}")
+        log(f"Error processing XML data: {e}", 1)
 
 def process_yaml(client, yaml_data, prefix=""):
     try:
         json_data = yaml.safe_load(yaml_data)
         process_json(client, json_data, prefix=prefix)
     except yaml.YAMLError as e:
-        print(f"Error processing YAML data: {e}")
+        log(f"Error processing YAML data: {e}", 1)
 
 def process_csv(client, csv_data, prefix=""):
     try:
@@ -47,7 +59,7 @@ def process_csv(client, csv_data, prefix=""):
             for key, value in row.items():
                 publish_to_mqtt(client, key, value, prefix)
     except Exception as e:
-        print(f"Error processing CSV data: {e}")
+        log(f"Error processing CSV data: {e}", 1)
 
 def detect_and_process_data(client, data, content_type, prefix=""):
     if content_type == 'application/json' or content_type == 'text/json':
@@ -55,7 +67,7 @@ def detect_and_process_data(client, data, content_type, prefix=""):
             json_data = json.loads(data)
             process_json(client, json_data, prefix=prefix)
         except json.JSONDecodeError as e:
-            print(f"Error processing JSON data: {e}")
+            log(f"Error processing JSON data: {e}", 1)
     elif content_type == 'application/xml' or content_type == 'text/xml':
         process_xml(client, data, prefix=prefix)
     elif content_type == 'application/x-yaml' or content_type == 'text/yaml':
@@ -63,21 +75,7 @@ def detect_and_process_data(client, data, content_type, prefix=""):
     elif content_type == 'text/csv' or content_type == 'application/csv':
         process_csv(client, data, prefix=prefix)
     else:
-        try:
-            json_data = json.loads(data)
-            process_json(client, json_data, prefix=prefix)
-        except json.JSONDecodeError:
-            try:
-                yaml_data = yaml.safe_load(data)
-                process_yaml(client, yaml_data, prefix=prefix)
-            except yaml.YAMLError:
-                try:
-                    process_xml(client, data, prefix=prefix)
-                except Exception:
-                    try:
-                        process_csv(client, data, prefix=prefix)
-                    except Exception:
-                        print("Unable to determine or process data format.")
+        log("Unable to determine or process data format.", 1)
 
 def fetch_and_publish_data(client, url, auth, verify, prefix):
     parsed_url = urlparse(url)
@@ -86,7 +84,7 @@ def fetch_and_publish_data(client, url, auth, verify, prefix):
         # Handle local file
         file_path = parsed_url.path
         if not os.path.exists(file_path):
-            print(f"Error: Local file {file_path} not found.")
+            log(f"Error: Local file {file_path} not found.", 1)
             return
 
         try:
@@ -95,7 +93,7 @@ def fetch_and_publish_data(client, url, auth, verify, prefix):
                 content_type = guess_content_type(file_path)
                 detect_and_process_data(client, data, content_type, prefix)
         except Exception as e:
-            print(f"Error reading local file {file_path}: {e}")
+            log(f"Error reading local file {file_path}: {e}", 1)
     else:
         # Handle HTTP/HTTPS
         try:
@@ -105,7 +103,7 @@ def fetch_and_publish_data(client, url, auth, verify, prefix):
             data = response.text
             detect_and_process_data(client, data, content_type, prefix)
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching data from the URL: {e}")
+            log(f"Error fetching data from the URL: {e}", 1)
 
 def guess_content_type(file_path):
     """Guess the content type based on file extension."""
@@ -127,17 +125,17 @@ def load_config_file(config_file):
             config_data = yaml.safe_load(file)
             return config_data.get('configurations', [])
     except FileNotFoundError:
-        print(f"Error: Configuration file {config_file} not found.")
+        log(f"Error: Configuration file {config_file} not found.", 1)
         sys.exit(1)
     except yaml.YAMLError as e:
-        print(f"Error: Failed to parse YAML configuration file: {e}")
+        log(f"Error: Failed to parse YAML configuration file: {e}", 1)
         sys.exit(1)
 
 def get_config_by_name(configurations, name):
     for config in configurations:
         if config.get('name') == name:
             return config
-    print(f"Error: Configuration with name '{name}' not found in the configuration file.")
+    log(f"Error: Configuration with name '{name}' not found in the configuration file.", 1)
     sys.exit(1)
 
 def merge_configs(base_config, override_config):
@@ -150,12 +148,26 @@ def parse_mqtt_host_and_port(mqtt_host):
         try:
             return host, int(port)
         except ValueError:
-            print(f"Error: Invalid port number '{port}' in MQTT host.")
+            log(f"Error: Invalid port number '{port}' in MQTT host.", 1)
             sys.exit(1)
     else:
         return mqtt_host, 1883  # Default MQTT port
 
-def process_config(client, config, interval):
+def process_config(client, config, config_name):
+    # Log the configuration name at Loglevel 2 or higher
+    log(f"Processing config: {config_name}", 2)
+
+    # Log the URL at Loglevel 3 or higher
+    log(f"Fetching data from URL: {config['url']}", 3)
+
+    # Log all defined parameters at Loglevel 10
+    if LOGLEVEL >= 10:
+        log(f"Defined parameters: {config}", 10)
+
+    # Log all parameters including defaults at Loglevel 11
+    if LOGLEVEL >= 11:
+        log(f"All parameters (including defaults): {config}", 11)
+
     # Certificate verification configuration
     verify = config.get('verify', 'true')
     if verify.lower() == "false":
@@ -163,8 +175,8 @@ def process_config(client, config, interval):
     elif os.path.isfile(verify):
         verify = verify
     elif verify.lower() != "true":
-        print(f"Error: The path provided for --verify does not exist or is not a file: {verify}")
-        sys.exit(1)
+        log(f"Error: The path provided for --verify does not exist or is not a file: {verify}", 1)
+        return
 
     # Set up URL authentication if credentials are provided
     auth = None
@@ -175,19 +187,17 @@ def process_config(client, config, interval):
     mqtt_host, mqtt_port = parse_mqtt_host_and_port(config.get('mqtt_ip', '127.0.0.1'))
 
     # Connect to the MQTT server
-    client.username_pw_set(config.get('mqttuser', ''), config.get('mqttpassword', ''))
     try:
         client.connect(mqtt_host, mqtt_port, 60)
     except Exception as e:
-        print(f"Error connecting to the MQTT server: {e}")
-        sys.exit(1)
+        log(f"Error connecting to the MQTT server: {e}", 1)
+        return
 
     # Fetch and publish data
-    fetch_and_publish_data(client, config['url'], auth, verify, config.get('prefix', ''))
-
-    # Wait for the interval if specified
-    if interval:
-        time.sleep(interval)
+    try:
+        fetch_and_publish_data(client, config['url'], auth, verify, config.get('prefix', ''))
+    except Exception as e:
+        log(f"Error during data fetch and publish: {e}", 1)
 
 def main():
     # Parse command line arguments
@@ -227,33 +237,41 @@ def main():
     else:
         # If no configfile is provided, create a single configuration from command-line arguments
         config_sets = [vars(args)]
+        config_name = "commandline"
 
-    # Main processing loop
+    # Dictionary to store the next execution time for each config
+    next_run_times = {}
+
+    # Initialize next_run_times with the current time for all configs
+    current_time = time.time()
+    for config in config_sets:
+        interval = config.get('interval')
+        if interval:
+            next_run_times[config['name']] = current_time + interval
+        else:
+            next_run_times[config['name']] = current_time  # Execute immediately if no interval
+
     while True:
+        current_time = time.time()
         for config in config_sets:
-            final_config = merge_configs(config, vars(args))
-            
-            # Validate username and password for URL authentication
-            if (final_config.get('username') and not final_config.get('password')) or (final_config.get('password') and not final_config.get('username')):
-                print("Error: Both --username and --password must be provided for URL authentication.")
-                sys.exit(1)
+            config_name = config.get('name', "commandline")
+            next_run_time = next_run_times.get(config_name)
 
-            # Validate MQTT username and password
-            if (final_config.get('mqttuser') and not final_config.get('mqttpassword')) or (final_config.get('mqttpassword') and not final_config.get('mqttuser')):
-                print("Error: Both --mqttuser and --mqttpassword must be provided for MQTT authentication.")
-                sys.exit(1)
+            if next_run_time and current_time >= next_run_time:
+                # Execute the config
+                final_config = merge_configs(config, vars(args))
+                
+                client = mqtt.Client()
+                client.username_pw_set(final_config.get('mqttuser', ''), final_config.get('mqttpassword', ''))
+                process_config(client, final_config, config_name)
 
-            # Validate interval (if provided)
-            if final_config.get('interval') is not None and final_config.get('interval') <= 0:
-                print("Error: The --interval value must be a positive integer.")
-                sys.exit(1)
+                # Update the next run time
+                interval = final_config.get('interval')
+                if interval:
+                    next_run_times[config_name] = current_time + interval
 
-            # Process the current configuration
-            process_config(client=mqtt.Client(), config=final_config, interval=final_config.get('interval'))
-
-        # If no interval is provided, break the loop after processing all configurations
-        if not final_config.get('interval'):
-            break
+        # Sleep for a short period to avoid busy waiting
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()
