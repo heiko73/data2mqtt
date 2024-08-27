@@ -9,7 +9,10 @@ The URL processing is handled by the requests library, with one exception: if it
 
 ## Installation / Dependencies
 
-The following Python libraries are required and might need to be installed (e.g. using pip):
+A docker image is available for data2mqtt:
+https://hub.docker.com/repository/docker/hgerstung/data2mqtt
+
+If you want to install this on your own system, in addition to the data2mqtt.py file the following Python libraries are required and might need to be installed (e.g. using pip):
 
     requests:        handling HTTP and HTTPS URLs
     json:            for JSON parsing
