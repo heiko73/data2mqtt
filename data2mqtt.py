@@ -260,8 +260,12 @@ def main():
             if next_run_time and current_time >= next_run_time:
                 # Execute the config
                 final_config = merge_configs(config, vars(args))
-                
-                client = mqtt.Client(protocol=mqtt.MQTTv311)
+                mqtt_version = config.get('mqtt_version', 'v3.1.1')  # Default to v3.1.1
+                log(f"Using MQTT version '{mqtt_version}'", 5)
+                if mqtt_version == "v5":
+                    client = mqtt.Client(protocol=mqtt.MQTTv5)
+                else:
+                    client = mqtt.Client(protocol=mqtt.MQTTv311)
                 client.username_pw_set(final_config.get('mqttuser', ''), final_config.get('mqttpassword', ''))
                 process_config(client, final_config, config_name)
 

@@ -57,6 +57,7 @@ def new_config():
             'url': request.form['url'],
             'mqtt_ip': request.form['mqtt_ip'],
             'mqtt_port': int(request.form['mqtt_port']),
+            'mqtt_version': request.form['mqtt_version'],
             'prefix': request.form.get('prefix', ''),
             'username': request.form.get('username', ''),
             'password': request.form.get('password', ''),
@@ -109,6 +110,7 @@ def edit_config(name):
         config['name'] = request.form['name'].strip()  # Achte darauf, dass der Name nicht leer ist
         config['url'] = request.form['url']
         config['mqtt_ip'] = request.form['mqtt_ip']
+        config['mqtt_version'] = request.form['mqtt_version']
         config['mqtt_port'] = int(request.form['mqtt_port'])
         config['prefix'] = request.form.get('prefix', '')
         config['username'] = request.form.get('username', '')
