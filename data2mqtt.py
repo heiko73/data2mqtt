@@ -11,15 +11,9 @@ import os
 import sys
 from urllib.parse import urlparse
 from datetime import datetime
+from logger import log  
 
-# Loglevel lesen (Default: 0)
 LOGLEVEL = int(os.getenv("LOGLEVEL", "0"))
-
-def log(message, level):
-    """Log messages with a timestamp and log level based on the current log level."""
-    if LOGLEVEL >= level:
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print(f"{timestamp} [{level}] {message}")
 
 def publish_to_mqtt(client, topic, value, prefix=""):
     full_topic = f"{prefix}.{topic}" if prefix else topic
@@ -199,6 +193,7 @@ def process_config(client, config, config_name):
     except Exception as e:
         log(f"Error during data fetch and publish: {e}", 1)
 
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(
@@ -245,6 +240,11 @@ def main():
     # Initialize next_run_times with the current time for all configs
     current_time = time.time()
     for config in config_sets:
+        # Überprüfe, ob der 'name'-Schlüssel in der Konfiguration vorhanden ist
+        if 'name' not in config:
+            log(f"Error: Missing 'name' key in one of the configuration sets: {config}", 1)
+            continue  # Überspringe diese Konfiguration
+
         interval = config.get('interval')
         if interval:
             next_run_times[config['name']] = current_time + interval
@@ -261,7 +261,7 @@ def main():
                 # Execute the config
                 final_config = merge_configs(config, vars(args))
                 
-                client = mqtt.Client()
+                client = mqtt.Client(protocol=mqtt.MQTTv311)
                 client.username_pw_set(final_config.get('mqttuser', ''), final_config.get('mqttpassword', ''))
                 process_config(client, final_config, config_name)
 
@@ -273,5 +273,8 @@ def main():
         # Sleep for a short period to avoid busy waiting
         time.sleep(1)
 
+
+
 if __name__ == "__main__":
     main()
+

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>data2mqtt</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="{{ url_for('static', filename='data2mqtt.png') }}" alt="data2mqtt Logo" class="logo">
+            <h1>data2mqtt</h1>
+            <p class="subtitle">Version 0.2 (2024-08-27) by H.Gerstung</p>
+        </header>
+        
+        <h2>Configuration Sets</h2>
+        <a href="{{ url_for('new_config') }}" class="button">New Configuration</a>
+        <ul>
+            {% for config in configurations %}
+                <li>
+                    <strong>{{ config.name }}</strong>
+                    <a href="{{ url_for('edit_config', name=config.name) }}" class="button small">Edit</a>
+                    <form action="{{ url_for('delete_config', name=config.name) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="button small">Delete</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

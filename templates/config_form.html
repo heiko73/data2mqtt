@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ action }} - data2mqtt</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img src="{{ url_for('static', filename='data2mqtt.png') }}" alt="data2mqtt Logo" class="logo">
+            <h1>data2mqtt</h1>
+            <p class="subtitle">by Heiko Gerstung</p>
+        </header>
+        
+        <h2>{{ action }}</h2>
+        <form method="POST">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" value="{{ config.name if config else '' }}" required>
+            
+            <label for="url">URL:</label>
+            <input type="text" id="url" name="url" value="{{ config.url if config else '' }}" required>
+            
+            <label for="mqtt_ip">MQTT IP:</label>
+            <input type="text" id="mqtt_ip" name="mqtt_ip" value="{{ config.mqtt_ip if config else '' }}" required>
+            
+            <label for="mqtt_port">MQTT Port:</label>
+            <input type="number" id="mqtt_port" name="mqtt_port" value="{{ config.mqtt_port if config else 1883 }}" required>
+            
+            <label for="prefix">Prefix:</label>
+            <input type="text" id="prefix" name="prefix" value="{{ config.prefix if config else '' }}">
+            
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" value="{{ config.username if config else '' }}">
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" value="{{ config.password if config else '' }}">
+            
+            <label for="mqttuser">MQTT Username:</label>
+            <input type="text" id="mqttuser" name="mqttuser" value="{{ config.mqttuser if config else '' }}">
+            
+            <label for="mqttpassword">MQTT Password:</label>
+            <input type="password" id="mqttpassword" name="mqttpassword" value="{{ config.mqttpassword if config else '' }}">
+            
+            <label for="verify">Verify SSL:</label>
+            <input type="text" id="verify" name="verify" value="{{ config.verify if config else 'true' }}">
+            
+            <label for="interval">Interval (seconds):</label>
+            <input type="number" id="interval" name="interval" value="{{ config.interval if config and config.interval is not none else '' }}">
+            
+            <button type="submit" class="button">Save</button>
+        </form>
+    </div>
+</body>
+</html>

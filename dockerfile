@@ -15,7 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 VOLUME ["/opt"]
 
 # Setze den Befehl, der beim Start des Containers ausgeführt wird
-CMD ["python", "data2mqtt.py", "--configfile", "/opt/config.yaml"]
+CMD ["python", "start_container.py"]
 
 ENV PYTHONUNBUFFERED=1
-

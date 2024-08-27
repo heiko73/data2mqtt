@@ -3,3 +3,6 @@ xmltodict
 paho-mqtt
 argparse
 pyyaml
+flask
+watchdog
+
