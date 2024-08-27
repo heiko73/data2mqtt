@@ -3,9 +3,12 @@ A Python script that can read data in various formats from an URL and publishes 
 
 ## Features
 
-The script allows to specify an URL (optional: username / password) from where it fetches data. Once the data has been successfully received, data2mqtt tries to detect the format of it. In addition to JSON, the program also supports XML, CSV and YAML. As soon as the format has been identified, the data is parsed and each found data point is published to a specified MQTT broker, which can be defined by IP address/hostname and port. Optionally, credentials for the broker can be provided if it is required. 
+The data2mqtt script allows to specify an URL (optional: username / password) from where it fetches data. Once the data has been successfully received, data2mqtt tries to detect the format of it. In addition to JSON, the program also supports XML, CSV and YAML. As soon as the format has been identified, the data is parsed and each found data point is published to a specified MQTT broker, which can be defined by IP address/hostname and port. Optionally, credentials for the broker can be provided if it is required. 
 
 The URL processing is handled by the requests library, with one exception: if it starts with file:// , data2mqtt reads the specified file directly. 
+
+## Web based configuration editor
+To make it easier to configure the tool, a web based configuration editor has been added. 
 
 ## Installation / Dependencies
 
