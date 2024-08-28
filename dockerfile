@@ -8,7 +8,10 @@ WORKDIR /app
 COPY . /app
 
 # Installiere die erforderlichen Python-Abhängigkeiten
+RUN apt update -y
+RUN apt upgrade -y
 RUN pip install --upgrade pip 
+RUN pip install --upgrade setuptools
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python -m py_compile *.py
 

@@ -5,3 +5,4 @@ argparse
 pyyaml
 flask
 watchdog
+waitress

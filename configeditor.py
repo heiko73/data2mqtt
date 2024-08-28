@@ -177,4 +177,5 @@ if __name__ == '__main__':
     log(f"Starting configeditor.py with port={port}, CFGFILE={CFGFILE}", 2)
 
     # Starte den Webserver
-    app.run(host='0.0.0.0', port=port)
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=port)
