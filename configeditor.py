@@ -1,3 +1,4 @@
+"""importing dependencies"""
 import os
 import sys
 import argparse
@@ -16,6 +17,7 @@ CFGFILE = os.getenv('CFGFILE', 'config.yaml')
 
 # Lade die Konfigurationsdatei
 def load_config():
+    """loading configuration from file"""
     if not os.path.exists(CFGFILE):
         return []
 
@@ -29,6 +31,7 @@ def load_config():
 
 # Speichere die Konfigurationsdatei
 def save_config(configurations):
+    """saving configuration to file"""
     # Überprüfe, ob jede Konfiguration den 'name'-Schlüssel hat
     for config in configurations:
         if 'name' not in config or not config['name']:
@@ -46,13 +49,15 @@ def save_config(configurations):
 # Startseite - Liste aller Konfigurationssätze
 @app.route('/')
 def index():
-    log(f"Accessed index page.", 10)
+    """index page processing"""
+    log("Accessed index page.", 10)
     configurations = load_config()
     return render_template('index.html', configurations=configurations)
 
 # Neuer Konfigurationssatz
 @app.route('/new', methods=['GET', 'POST'])
 def new_config():
+    """configuration editor page / new config"""
     if request.method == 'POST':
         configurations = load_config()
 
@@ -79,7 +84,7 @@ def new_config():
                                    config=new_config, action="New Configuration")
 
         # Validierung
-        if not validate_mqtt_host(mqtt_host):
+        if not validate_mqtt_host(mqtt_server):
             flash("Invalid MQTT Host. Please enter a valid IP address or hostname.", "danger")
             return redirect(url_for('new_config'))
 
@@ -104,6 +109,7 @@ def new_config():
 # Konfigurationssatz editieren
 @app.route('/edit/<string:name>', methods=['GET', 'POST'])
 def edit_config(name):
+    """configuration editor page, changing existing config"""
     configurations = load_config()
     config = next((c for c in configurations if c['name'] == name), None)
 
@@ -143,6 +149,7 @@ def edit_config(name):
 # Konfigurationssatz löschen
 @app.route('/delete/<string:name>', methods=['POST'])
 def delete_config(name):
+    """deleting an existing configuration"""
     configurations = load_config()
     configurations = [c for c in configurations if c['name'] != name]
 
