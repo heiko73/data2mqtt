@@ -10,6 +10,7 @@ COPY . /app
 # Installiere die erforderlichen Python-Abhängigkeiten
 RUN pip install --upgrade pip 
 RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m py_compile *.py
 
 # Standardmäßig soll die Konfigurationsdatei in /opt liegen
 VOLUME ["/opt"]

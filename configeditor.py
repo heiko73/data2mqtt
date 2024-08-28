@@ -1,19 +1,24 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-import yaml
 import os
+import sys
 import argparse
+import yaml
+from flask import Flask, render_template, request, redirect, url_for, flash
 from logger import log  # Importiere die gemeinsame Log-Funktion
 from validator import validate_mqtt_host, validate_mqtt_port, validate_interval
 
+cli = sys.modules['flask.cli']
+cli.show_server_banner = lambda *x: None
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Not for production use!
+
+CFGFILE = os.getenv('CFGFILE', 'config.yaml')
 
 # Lade die Konfigurationsdatei
 def load_config():
     if not os.path.exists(CFGFILE):
         return []
-    
+
     with open(CFGFILE, 'r') as file:
         try:
             config_data = yaml.safe_load(file)
@@ -50,12 +55,12 @@ def index():
 def new_config():
     if request.method == 'POST':
         configurations = load_config()
-        
+
         # Erstelle einen neuen Konfigurationssatz basierend auf den Formulardaten
         new_config = {
             'name': request.form['name'].strip(),  # Achte darauf, dass der Name nicht leer ist
             'url': request.form['url'],
-            'mqtt_ip': request.form['mqtt_ip'],
+            'mqtt_server': request.form['mqtt_server'],
             'mqtt_port': int(request.form['mqtt_port']),
             'mqtt_version': request.form['mqtt_version'],
             'prefix': request.form.get('prefix', ''),
@@ -70,7 +75,8 @@ def new_config():
         # Überprüfe, ob der Name gesetzt ist
         if not new_config['name']:
             flash("Error: 'name' field cannot be empty.", "danger")
-            return render_template('config_form.html', config=new_config, action="New Configuration")
+            return render_template('config_form.html', \
+                                   config=new_config, action="New Configuration")
 
         # Validierung
         if not validate_mqtt_host(mqtt_host):
@@ -87,12 +93,12 @@ def new_config():
 
         configurations.append(new_config)
         save_config(configurations)
-        
+
         log(f"Added new configuration: {new_config['name']}", 5)
         log(f"Configuration parameters: {new_config}", 11)
-        
+
         return redirect(url_for('index'))
-    
+
     return render_template('config_form.html', config=None, action="New Configuration")
 
 # Konfigurationssatz editieren
@@ -100,16 +106,16 @@ def new_config():
 def edit_config(name):
     configurations = load_config()
     config = next((c for c in configurations if c['name'] == name), None)
-    
+
     if not config:
         flash(f"Configuration '{name}' not found!", "danger")
         return redirect(url_for('index'))
-    
+
     if request.method == 'POST':
         # Update the configuration set with the form data
         config['name'] = request.form['name'].strip()  # Achte darauf, dass der Name nicht leer ist
         config['url'] = request.form['url']
-        config['mqtt_ip'] = request.form['mqtt_ip']
+        config['mqtt_server'] = request.form['mqtt_server']
         config['mqtt_version'] = request.form['mqtt_version']
         config['mqtt_port'] = int(request.form['mqtt_port'])
         config['prefix'] = request.form.get('prefix', '')
@@ -126,12 +132,12 @@ def edit_config(name):
             return render_template('config_form.html', config=config, action="Edit Configuration")
 
         save_config(configurations)
-        
+
         log(f"Edited configuration: {config['name']}", 5)
         log(f"Updated configuration parameters: {config}", 11)
-        
+
         return redirect(url_for('index'))
-    
+
     return render_template('config_form.html', config=config, action="Edit Configuration")
 
 # Konfigurationssatz löschen
@@ -139,17 +145,19 @@ def edit_config(name):
 def delete_config(name):
     configurations = load_config()
     configurations = [c for c in configurations if c['name'] != name]
-    
+
     save_config(configurations)
-    
+
     log(f"Deleted configuration: {name}", 5)
-    
+
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
     # Argumentparser für den --port Parameter
     parser = argparse.ArgumentParser(description="Start the configuration editor web server.")
-    parser.add_argument('--port', type=int, help="Port to run the web server on. Overrides WEBPORT environment variable if set.")
+    parser.add_argument('--port', type=int, \
+                        help="Port to run the web server on. Overrides WEBPORT environment \
+                        variable if set.")
     args = parser.parse_args()
 
     # Lese den Port entweder aus dem --port Argument oder der WEBPORT-Umgebungsvariablen

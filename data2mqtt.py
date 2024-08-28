@@ -1,24 +1,20 @@
-import requests
-import json
-import yaml
-import csv
-import xmltodict
-import paho.mqtt.client as mqtt
-import argparse
-import time
-from io import StringIO
 import os
 import sys
+import json
+import csv
+import time
+import argparse
+from io import StringIO
 from urllib.parse import urlparse
-from datetime import datetime
+import yaml
+import requests
+import xmltodict
+import paho.mqtt.client as mqtt
 from logger import log  
-
-LOGLEVEL = int(os.getenv("LOGLEVEL", "0"))
 
 def publish_to_mqtt(client, topic, value, prefix=""):
     full_topic = f"{prefix}.{topic}" if prefix else topic
-    if LOGLEVEL >= 4:
-        log(f"Publishing to MQTT: Topic: {full_topic}, Value: {value}", 4)
+    log(f"Publishing to MQTT: Topic: {full_topic}, Value: {value}", 4)
     client.publish(full_topic, value)
 
 def process_json(client, json_obj, parent_key="", prefix=""):
@@ -56,6 +52,7 @@ def process_csv(client, csv_data, prefix=""):
         log(f"Error processing CSV data: {e}", 1)
 
 def detect_and_process_data(client, data, content_type, prefix=""):
+    log(f"trying to parse data: {content_type}",5)
     if content_type == 'application/json' or content_type == 'text/json':
         try:
             json_data = json.loads(data)
@@ -72,9 +69,10 @@ def detect_and_process_data(client, data, content_type, prefix=""):
         log("Unable to determine or process data format.", 1)
 
 def fetch_and_publish_data(client, url, auth, verify, prefix):
+    log(f"Fetching data ...", 10)
     parsed_url = urlparse(url)
-
     if parsed_url.scheme == 'file':
+        log(f"this is a local file data source",15)
         # Handle local file
         file_path = parsed_url.path
         if not os.path.exists(file_path):
@@ -85,16 +83,19 @@ def fetch_and_publish_data(client, url, auth, verify, prefix):
             with open(file_path, 'r') as file:
                 data = file.read()
                 content_type = guess_content_type(file_path)
+                log(f"Content type detected as: {content_type}",4)                
                 detect_and_process_data(client, data, content_type, prefix)
         except Exception as e:
             log(f"Error reading local file {file_path}: {e}", 1)
     else:
         # Handle HTTP/HTTPS
+        log(f"this is a remote data source ({url})",15)
         try:
             response = requests.get(url, auth=auth, verify=verify)
             response.raise_for_status()  # Raise an exception for HTTP errors
             content_type = response.headers.get('Content-Type', '').lower()
             data = response.text
+            log(f"data received: \n {data}",25)
             detect_and_process_data(client, data, content_type, prefix)
         except requests.exceptions.RequestException as e:
             log(f"Error fetching data from the URL: {e}", 1)
@@ -103,6 +104,8 @@ def guess_content_type(file_path):
     """Guess the content type based on file extension."""
     _, ext = os.path.splitext(file_path)
     if ext in ['.json']:
+        return 'application/json'
+    if ext in ['.jsn']:
         return 'application/json'
     elif ext in ['.xml']:
         return 'application/xml'
@@ -135,7 +138,7 @@ def get_config_by_name(configurations, name):
 def merge_configs(base_config, override_config):
     return {**base_config, **{k: v for k, v in override_config.items() if v is not None}}
 
-def parse_mqtt_host_and_port(mqtt_host):
+def parse_mqtt_host_and_port(mqtt_host, mqtt_port):
     """Parses the MQTT host and port if specified as part of the host string."""
     if ':' in mqtt_host:
         host, port = mqtt_host.rsplit(':', 1)
@@ -145,7 +148,7 @@ def parse_mqtt_host_and_port(mqtt_host):
             log(f"Error: Invalid port number '{port}' in MQTT host.", 1)
             sys.exit(1)
     else:
-        return mqtt_host, 1883  # Default MQTT port
+        return mqtt_host, mqtt_port  # Default MQTT port
 
 def process_config(client, config, config_name):
     # Log the configuration name at Loglevel 2 or higher
@@ -155,12 +158,10 @@ def process_config(client, config, config_name):
     log(f"Fetching data from URL: {config['url']}", 3)
 
     # Log all defined parameters at Loglevel 10
-    if LOGLEVEL >= 10:
-        log(f"Defined parameters: {config}", 10)
+    log(f"Defined parameters: {config}", 10)
 
     # Log all parameters including defaults at Loglevel 11
-    if LOGLEVEL >= 11:
-        log(f"All parameters (including defaults): {config}", 11)
+    log(f"All parameters (including defaults): {config}", 11)
 
     # Certificate verification configuration
     verify = config.get('verify', 'true')
@@ -178,20 +179,23 @@ def process_config(client, config, config_name):
         auth = (config['username'], config['password'])
 
     # Parse MQTT host and port
-    mqtt_host, mqtt_port = parse_mqtt_host_and_port(config.get('mqtt_ip', '127.0.0.1'))
+    mqtt_server = config.get('mqtt_server')
+    mqtt_port = config.get('mqtt_port') 
+    mqtt_host, mqtt_hostport = parse_mqtt_host_and_port(mqtt_server, mqtt_port)
+    log(f"Host / IP: {mqtt_host} {mqtt_server}",5)
 
     # Connect to the MQTT server
     try:
-        client.connect(mqtt_host, mqtt_port, 60)
+        client.connect(mqtt_host, mqtt_hostport, 60)
     except Exception as e:
         log(f"Error connecting to the MQTT server: {e}", 1)
         return
 
     # Fetch and publish data
-    try:
-        fetch_and_publish_data(client, config['url'], auth, verify, config.get('prefix', ''))
-    except Exception as e:
-        log(f"Error during data fetch and publish: {e}", 1)
+    fetch_and_publish_data(client, config['url'], auth, verify, config.get('prefix', ''))
+    # try:
+    # except Exception as e:
+    #    log(f"Error during data fetch and publish: {e}", 1)
 
 
 def main():
@@ -216,6 +220,7 @@ def main():
     args = parser.parse_args()
 
     # Load configurations from a file if provided
+
     config_sets = []
     if args.configfile:
         configurations = load_config_file(args.configfile)

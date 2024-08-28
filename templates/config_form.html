@@ -24,8 +24,8 @@
             <label for="url">URL:</label>
             <input type="text" id="url" name="url" value="{{ config.url if config else '' }}" required>
             
-            <label for="mqtt_ip">MQTT IP:</label>
-            <input type="text" id="mqtt_ip" name="mqtt_ip" value="{{ config.mqtt_ip if config else '' }}" required>
+            <label for="mqtt_server">MQTT Broker:</label>
+            <input type="text" id="mqtt_server" name="mqtt_server" value="{{ config.mqtt_server if config else '' }}" required>
             
             <label for="mqtt_port">MQTT Port:</label>
             <input type="number" id="mqtt_port" name="mqtt_port" value="{{ config.mqtt_port if config else 1883 }}" required>
