@@ -10,12 +10,8 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <img src="{{ url_for('static', filename='data2mqtt.png') }}" alt="data2mqtt Logo" class="logo">
-            <h1>data2mqtt</h1>
-            <p class="subtitle">Version 0.5 (2024-08-28) by H.Gerstung</p>
-        </header>
-        
+       {% include 'header.html' %}
+                
         <h2>{{ action }}</h2>
         <form method="POST">
             <label for="name">Name:</label>
